@@ -47,5 +47,5 @@ def log_event_to_mysql(conn, session_id, event_type, details_dict, topic=None, d
                  st.error(f"Database Reconnect Error: {recon_err}")
         else:
             st.error(f"Database Error: {err}")
-    finally:
-        cursor.close()
+    # finally:
+        # cursor.close()
