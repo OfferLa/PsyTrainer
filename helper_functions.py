@@ -25,7 +25,7 @@ def init_connection():
 
 
 # --- HELPER FUNCTION: Log to Database ---
-def log_event_to_mysql(session_id, event_type, details_dict, topic=None, difficulty=None, scope=None, score=None):
+def log_event_to_mysql(conn, session_id, event_type, details_dict, topic=None, difficulty=None, scope=None, score=None):
     try:
         cursor = conn.cursor()
         details_json = json.dumps(details_dict, ensure_ascii=False)
@@ -48,5 +48,4 @@ def log_event_to_mysql(session_id, event_type, details_dict, topic=None, difficu
         else:
             st.error(f"Database Error: {err}")
     finally:
-        if 'cursor' in locals() and cursor.is_open():
-            cursor.close()
+        cursor.close()

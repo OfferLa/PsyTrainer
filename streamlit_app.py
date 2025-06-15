@@ -3,11 +3,10 @@ import os
 import litellm
 import random
 import uuid
-import json
-import mysql.connector
-import re
+# import json
+# import mysql.connector
+# import re
 from helper_functions import init_connection, parse_score_from_feedback, log_event_to_mysql
-# import helper_functions
 
 conn = init_connection()
 
@@ -32,10 +31,10 @@ if 'current_question_unit' not in st.session_state:
     current_unit = random.choice(knowledge_base)
     st.session_state.current_question_unit = current_unit
 
-# current_unit = st.session_state.current_question_unit
+current_unit = st.session_state.current_question_unit
 
 # if 'last_logged_topic' not in st.session_state or st.session_state.last_logged_topic != current_unit['topic']:
-log_event_to_mysql(
+log_event_to_mysql(conn,
         session_id=st.session_state.session_id, 
         event_type="QUESTION_PRESENTED", 
         details_dict={"questionText": current_unit['question']},
