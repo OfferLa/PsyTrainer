@@ -30,8 +30,8 @@ if 'session_id' not in st.session_state:
 if 'current_question_unit' not in st.session_state:
     current_unit = random.choice(knowledge_base)
     st.session_state.current_question_unit = current_unit
-
-current_unit = st.session_state.current_question_unit
+else:
+    current_unit = st.session_state.current_question_unit
 
 # if 'last_logged_topic' not in st.session_state or st.session_state.last_logged_topic != current_unit['topic']:
 log_event_to_mysql(conn,
