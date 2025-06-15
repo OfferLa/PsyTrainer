@@ -53,8 +53,8 @@ student_answer = st.text_area("הקלידי את תשובתך כאן:", height=1
 # --- THE CORRECTED AGENTIC WORKFLOW ---
 if st.button("הערך את תשובתי"):
     session_id = st.session_state.session_id
-    
-    log_event_to_mysql(conn,
+    try:
+        log_event_to_mysql(conn,
         session_id=session_id, 
         event_type="SUBMISSION_ATTEMPT", 
         details_dict={"questionText": current_unit['question'], "studentAnswer": student_answer},
@@ -62,6 +62,8 @@ if st.button("הערך את תשובתי"):
         difficulty=current_unit['difficulty'],
         scope=current_unit['scope']
     )
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
     
     try:
         if not student_answer.strip():
