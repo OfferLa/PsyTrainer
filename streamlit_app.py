@@ -23,7 +23,7 @@ except Exception:
 litellm.set_verbose = True
 
 # --- STREAMLIT PAGE SETUP ---
-st.title("🎓 Psymon - המורה הפרטי שלך")
+st.title("🎓  המורה הפרטי שלך")
 
 # --- CORE LOGIC ---
 # We use session_state to remember which question was asked
@@ -42,12 +42,12 @@ st.divider() # Add a visual separator
 
 # --- Wait for the student's answer ---
 # st.text_area is better for longer, multi-line answers
-student_answer = st.text_area("הקלד/י את תשובתך כאן:", height=150)
+student_answer = st.text_area("הקלידי את תשובתך כאן:", height=150)
 
 # The "Evaluate" button
 if st.button("הערך את תשובתי"):
     if not student_answer.strip():
-        st.warning("אנא הקלד/י תשובה לפני הלחיצה על הכפתור.")
+        st.warning("אנא הקלידי תשובה לפני הלחיצה על הכפתור.")
     else:
         # --- LLM EVALUATION LOGIC ---
         with st.spinner("המערכת מעריכה את תשובתך..."):
@@ -55,7 +55,7 @@ if st.button("הערך את תשובתי"):
             # This is the highly structured prompt for the Gemini model
             evaluation_prompt = f"""
             You are an assistant that evaluates a student's answer against an ideal answer from a textbook.
-            The interaction must be in HEBREW, student is female.
+            The interaction must be in HEBREW, Female form.
 
             **Sample of an Ideal Answer (in Hebrew) to this question:**
             {current_unit['ideal_answer']}
