@@ -22,7 +22,7 @@ def init_connection():
         database=st.secrets["mysql"]["database"]
     )
 
-conn = init_connection()
+
 
 # --- HELPER FUNCTION: Log to Database ---
 def log_event_to_mysql(session_id, event_type, details_dict, topic=None, difficulty=None, scope=None, score=None):

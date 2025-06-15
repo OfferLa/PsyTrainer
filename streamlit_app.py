@@ -6,9 +6,10 @@ import uuid
 import json
 import mysql.connector
 import re
-from helper_functions import parse_score_from_feedback, log_event_to_mysql
+from helper_functions import init_connection, parse_score_from_feedback, log_event_to_mysql
 # import helper_functions
 
+conn = init_connection()
 
 from knowledge_base import knowledge_base
 
