@@ -54,7 +54,7 @@ student_answer = st.text_area("הקלידי את תשובתך כאן:", height=1
 if st.button("הערך את תשובתי"):
     session_id = st.session_state.session_id
     
-    log_event_to_mysql(
+    log_event_to_mysql(conn,
         session_id=session_id, 
         event_type="SUBMISSION_ATTEMPT", 
         details_dict={"questionText": current_unit['question'], "studentAnswer": student_answer},
@@ -82,7 +82,7 @@ if st.button("הערך את תשובתי"):
                 triage_response = litellm.completion(model="gemini/gemini-1.5-flash-latest", messages=[{"role": "user", "content": triage_prompt}])
                 classification = triage_response.choices[0].message.content.strip().lower()
             
-            log_event_to_mysql(session_id, "TRIAGE_RESULT", {"classification": classification})
+            log_event_to_mysql(conn, session_id, "TRIAGE_RESULT", {"classification": classification})
 
             # --- CORRECTED LOGIC: The evaluation is now NESTED inside the 'valid_attempt' block ---
             if "valid_attempt" in classification:
@@ -139,4 +139,4 @@ if st.button("הערך את תשובתי"):
 
     except Exception as e:
         st.error(f"An error occurred: {e}")
-        log_event_to_mysql(session_id, "ERROR", {"source": "main_logic_block", "message": str(e)})
+        log_event_to_mysql(conn, session_id, "ERROR", {"source": "main_logic_block", "message": str(e)})
