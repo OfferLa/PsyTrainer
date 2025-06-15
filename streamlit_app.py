@@ -50,14 +50,14 @@ if st.button("הערך את תשובתי"):
         st.warning("אנא הקלד/י תשובה לפני הלחיצה על הכפתור.")
     else:
         # --- LLM EVALUATION LOGIC ---
-        with st.spinner("פסימון מעריך את תשובתך..."):
+        with st.spinner("המערכת מעריכה את תשובתך..."):
             
             # This is the highly structured prompt for the Gemini model
             evaluation_prompt = f"""
             You are an assistant that evaluates a student's answer against an ideal answer from a textbook.
-            The interaction must be in HEBREW.
+            The interaction must be in HEBREW, student is female.
 
-            **Ideal Answer (in Hebrew):**
+            **Sample of an Ideal Answer (in Hebrew) to this question:**
             {current_unit['ideal_answer']}
 
             **Key Concepts the student should mention (in Hebrew):**
@@ -88,7 +88,7 @@ if st.button("הערך את תשובתי"):
                 
                 feedback_text = evaluation_response.choices[0].message.content
                 st.markdown("---")
-                st.subheader("הערכה של פסימון:")
+                st.subheader("הערכה של תשובתך:")
                 st.markdown(feedback_text)
 
             except Exception as e:
