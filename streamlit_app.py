@@ -6,9 +6,7 @@ import uuid
 # import json
 # import mysql.connector
 # import re
-from helper_functions import init_connection, parse_score_from_feedback, log_event_to_mysql
-
-conn = init_connection()
+from helper_functions import parse_score_from_feedback, log_event_to_mysql
 
 from knowledge_base import knowledge_base
 
@@ -34,7 +32,7 @@ else:
     current_unit = st.session_state.current_question_unit
 
 # if 'last_logged_topic' not in st.session_state or st.session_state.last_logged_topic != current_unit['topic']:
-log_event_to_mysql(conn,
+log_event_to_mysql(
         session_id=st.session_state.session_id, 
         event_type="QUESTION_PRESENTED", 
         details_dict={"questionText": current_unit['question']},
@@ -54,7 +52,7 @@ student_answer = st.text_area("הקלידי את תשובתך כאן:", height=1
 if st.button("הערך את תשובתי"):
     session_id = st.session_state.session_id
     try:
-        log_event_to_mysql(conn,
+        log_event_to_mysql(
         session_id=session_id, 
         event_type="SUBMISSION_ATTEMPT", 
         details_dict={"questionText": current_unit['question'], "studentAnswer": student_answer},
@@ -84,7 +82,7 @@ if st.button("הערך את תשובתי"):
                 triage_response = litellm.completion(model="gemini/gemini-1.5-flash-latest", messages=[{"role": "user", "content": triage_prompt}])
                 classification = triage_response.choices[0].message.content.strip().lower()
             
-            log_event_to_mysql(conn, session_id, "TRIAGE_RESULT", {"classification": classification})
+            log_event_to_mysql(session_id, "TRIAGE_RESULT", {"classification": classification})
 
             # --- CORRECTED LOGIC: The evaluation is now NESTED inside the 'valid_attempt' block ---
             if "valid_attempt" in classification:
@@ -141,4 +139,4 @@ if st.button("הערך את תשובתי"):
 
     except Exception as e:
         st.error(f"An error occurred: {e}")
-        log_event_to_mysql(conn, session_id, "ERROR", {"source": "main_logic_block", "message": str(e)})
+        log_event_to_mysql(session_id, "ERROR", {"source": "main_logic_block", "message": str(e)})
