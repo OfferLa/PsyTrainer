@@ -48,4 +48,12 @@ def log_event_to_mysql(session_id, event_type, details_dict, topic=None, difficu
             conn.close()
 
 
-
+# --- HELPER FUNCTION: Display RTL Text ---
+def st_rtl_write(text: str):
+    """
+    A helper function to display text in Streamlit with RTL direction and right alignment.
+    """
+    st.markdown(
+        f'<div style="direction: rtl; text-align: right;">{text}</div>',
+        unsafe_allow_html=True
+    )

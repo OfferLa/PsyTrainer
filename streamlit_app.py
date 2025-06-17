@@ -3,10 +3,10 @@ import os
 import litellm
 import random
 import uuid
-# import json
+import json
 # import mysql.connector
 # import re
-from helper_functions import parse_score_from_feedback, log_event_to_mysql
+from helper_functions import parse_score_from_feedback, log_event_to_mysql, st_rtl_write
 
 from knowledge_base import knowledge_base
 
@@ -31,8 +31,8 @@ if 'current_question_unit' not in st.session_state:
 else:
     current_unit = st.session_state.current_question_unit
 
-# if 'last_logged_topic' not in st.session_state or st.session_state.last_logged_topic != current_unit['topic']:
-log_event_to_mysql(
+if 'last_logged_topic' not in st.session_state or st.session_state.last_logged_topic != current_unit['topic']:
+    log_event_to_mysql(
         session_id=st.session_state.session_id, 
         event_type="QUESTION_PRESENTED", 
         details_dict={"questionText": current_unit['question']},
@@ -40,11 +40,16 @@ log_event_to_mysql(
         difficulty=current_unit['difficulty'],
         scope=current_unit['scope']
     )
-#    st.session_state.last_logged_topic = current_unit['topic']
+    st.session_state.last_logged_topic = current_unit['topic']
 
 st.header(f"נושא: {current_unit['topic']}")
 st.subheader(f"שאלה לדוגמה (מעמוד {current_unit['page_number']}):")
-st.write(current_unit['question'])
+
+# Use st.markdown to create an RTL container for the question
+#rtl_question = f'<div style="direction: rtl; text-align: right;">{current_unit["question"]}</div>'
+#st.markdown(rtl_question, unsafe_allow_html=True)
+
+st_rtl_write(current_unit['question'])
 st.divider()
 student_answer = st.text_area("הקלידי את תשובתך כאן:", height=150)
 
@@ -89,7 +94,7 @@ if st.button("הערך את תשובתי"):
                 # --- AGENT 2: Evaluator Agent ---
                 with st.spinner("המערכת מעריכה את תשובתך..."):
                     evaluation_prompt = f"""
-                    You are an assistant that evaluates a student's answer against an ideal answer from a textbook. The interaction must be in HEBREW, Female form.
+                    You are an assistant that evaluates a student's answer against an ideal answer from a textbook. The interaction must be in HEBREW, Female form (You are a male trainer, and the student is female).
                     **Sample of an Ideal Answer (in Hebrew) to this question:** {current_unit['ideal_answer']}
                     **Key Concepts the student should mention (in Hebrew):** {current_unit['key_concepts']}
                     **Student's Answer (in Hebrew):** {student_answer}
@@ -98,27 +103,67 @@ if st.button("הערך את תשובתי"):
                     1. Provide a score from 1 (completely wrong) to 5 (perfect).
                     2. Provide a short, one-sentence justification for your score.
                     3. Provide friendly and constructive feedback to help the student learn.
-                    Format your response exactly as follows:
-                    **ציון:** [Score]/5
-                    **נימוק:** [Justification]
-                    **משוב:** [Feedback]
+
+                    Format your response as a single, valid JSON object with ONLY the following keys:
+                    - "score": An integer from 1 to 5.
+                    - "justification": A string containing the justification.
+                    - "feedback": A string containing the feedback.
                     """
-                    evaluation_response = litellm.completion(model="gemini/gemini-1.5-flash-latest", messages=[{"role": "user", "content": evaluation_prompt}])
-                    feedback_text = evaluation_response.choices[0].message.content
-                    
-                    st.markdown("---"); st.subheader("הערכה של תשובתך:"); st.markdown(feedback_text)
-                    
-                    numeric_score = parse_score_from_feedback(feedback_text)
-                    
-                    log_event_to_mysql(
-                        session_id=session_id,
-                        event_type="EVALUATION_RESULT",
-                        details_dict={"rawFeedback": feedback_text},
-                        topic=current_unit['topic'],
-                        difficulty=current_unit['difficulty'],
-                        scope=current_unit['scope'],
-                        score=numeric_score
-                    )
+                    evaluation_response = litellm.completion(model="gemini/gemini-1.5-flash-latest", messages=[{"role": "user", "content": evaluation_prompt}],response_format={"type": "json_object"})
+                                        
+                    feedback_json_string = evaluation_response.choices[0].message.content
+
+                    # --- THIS IS THE NEW BLOCK ---
+
+
+                    try:
+                        # Parse the JSON string from the LLM into a Python dictionary
+                        evaluation_data = json.loads(feedback_json_string)
+
+                        # Safely get the data. .get() is safer than [] because it won't crash if a key is missing.
+                        numeric_score = evaluation_data.get('score')
+                        justification_text = evaluation_data.get('justification', "לא סופק נימוק.")
+                        feedback_text = evaluation_data.get('feedback', "לא סופק משוב.")
+
+                       # Display the structured feedback
+                        st.markdown("---")
+                        st.markdown('<h3 style="direction: rtl; text-align: right;">הערכה של תשובתך:</h3>', unsafe_allow_html=True)
+
+                        # Construct the final HTML string with bold tags and line breaks
+                        final_feedback_html = f"""
+                        <div style="direction: rtl; text-align: right;">
+                            <b>ציון:</b> {numeric_score}/5<br>
+                            <b>נימוק:</b> {justification_text}<br>
+                            <b>משוב:</b> {feedback_text}
+                        </div>
+                        """
+                        st.markdown(final_feedback_html, unsafe_allow_html=True)
+
+
+                        # Log the event with the clean, numeric score
+                        log_event_to_mysql(
+                            session_id=session_id,
+                            event_type="EVALUATION_RESULT",
+                            details_dict={"rawFeedback": evaluation_data}, # Log the whole structured object
+                            topic=current_unit['topic'],
+                            difficulty=current_unit['difficulty'],
+                            scope=current_unit['scope'],
+                            score=numeric_score # Use the direct numeric score
+                        )
+
+                    except (json.JSONDecodeError, AttributeError):
+                        # This is a fallback in case the LLM fails to return valid JSON
+                        st.error("שגיאה בעיבוד תשובת המערכת. מציג את התשובה הגולמית:")
+                        st_rtl_write(feedback_json_string) # Display the raw text so nothing is lost
+                        log_event_to_mysql(
+                            session_id=session_id, event_type="ERROR",
+                            details_dict={"source": "json_parsing", "rawResponse": feedback_json_string},
+                            topic=current_unit['topic']
+                        )
+                    # --- END OF NEW BLOCK ---
+
+
+
 
             elif "no_knowledge" in classification:
                 response_text = (
